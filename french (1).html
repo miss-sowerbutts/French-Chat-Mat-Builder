@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Click to Drag and Drop Blocks</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+      overflow: hidden;
+    }
+
+    .container {
+      width: 80%;
+      height: 111%;
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      padding: 10px;
+      border: 3px solid #333;
+      border-radius: 10px;
+      background-color: #e0e0e0;
+      z-index: 1;
+    }
+
+    .line {
+      height: 5%;
+      width: 10000%;
+      background-color: #fff;
+      border: 3px solid #333;
+      border-radius: 100px;
+      position: relative;
+      margin-bottom: 100px;
+      left: -10000%;
+    }
+
+    .small-container {
+      width: 15%;
+      height: 35%;
+      border: 3px solid #333;
+      border-radius: 10px;
+      background-color: #fff;
+      padding: 5px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      box-sizing: border-box;
+      margin-bottom: 5px;
+    }
+
+    .label {
+      width: 100%;
+      text-align: center;
+      font-weight: bold;
+      background-color: #ddd;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      padding: 3px;
+      font-size: 10px;
+    }
+
+    .block {
+      background-color: skyblue;
+      text-align: center;
+      line-height: 1.2;
+      border: 2px solid #333;
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 3px;
+      box-sizing: border-box;
+      font-size: 10px;
+      word-wrap: break-word;
+      overflow: hidden;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(5, auto);
+      gap: 5px;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .lines-container {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="container" id="container">
+      <div class="lines-container" id="lines-container">
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isDragging = false;
+    let currentBlock = null;
+
+    const containerLabels = [
+      'Optional',
+      '1',
+      'Extra Expressions',
+      '2',
+      '3',
+      '4 Box 1',
+      '4 Box 2',
+      '5'
+    ];
+
+    const blockText = [
+      ['À mon avis... (In my opinion...)', 'Je pense que... (I think that...)', 'Je crois que... (I believe that...)'],
+      ['J\'adore... (I love)', 'J\'aime beaucoup... (I like... a lot.)', 'Je n\'aime pas trop... (I\'m not crazy about...)', 'J\'aime un peu... (I like... a little.)', 'Je n\'aime pas du tout... (I don\'t like... at all)', 'Je déteste... (I hate...)'],
+      ['Je l\'écouterais encore (I will listen to it again)', 'Je ne l\'écouterais plus jamais (en aucune circonstance)! (I will never listen to it under any circumstance)', 'Je suis totalement d\'accord avec toi/vous. (I completely agree with you)', 'Je suis/ne suis pas de ton avis. (I don\'t agree with you)', 'Quelle chanson préfères-tu? (Which song do you prefer?)', 'Quel artiste préfères-tu? (Which artist do you prefer?)', 'Ma chanson préférée, c\'est... (My favourite song is...)', 'Mon clip/Mon artiste préféré, c\'est... (My favourite clip/artist is...)'],
+      ['La chanson (the song)', 'La musique (the music)', 'Le rythme (the rhythm)', 'Le chanteur (the male singer)', 'La chanteuse (the female singer)', 'Les paroles (the lyrics)', 'Le genre (the genre)', 'Le clip (the music video)', 'Le style (the style/sound)', 'Le message (the message)', 'Parce que (because)'],
+      ['Est (is)', 'N\'est pas (isn\'t)', 'Est très (is very)', 'Est trop (is too)', 'Est assez (is rather/quite)', 'Sont (are)', 'N\'est pas assez (is not enough)', 'Pourrait être plus (could be more)', 'Me semble (seems to me to be)', 'A (has)', 'N\'a pas (doesn\'t)', 'C\'est (it is)', 'Ce n\'est pas (it is not)'],
+      ['Lent(e)/rapide (slow/fast)', 'Triste/déprimant(e) (sad/depressing)', 'Entraînant(e) (catchy, upbeat)', 'Banal(e) (mundane, unremarkable)', 'Heureux/heureuse (happy)', 'Ennuyeux/ennuyé(e) (boring, annoying)', 'Dépassé(e) (outdated)', 'Touchant(e) (touching, moving)', 'Très commercial(e) (commercialized)', 'Mauvais(e) (bad)', 'Bon/bonne (good)', 'Doué(e) (talented)', 'Une belle voix (a beautiful voice)'],
+      ['Pénible (annoying)', 'Calme (calm)', 'Joyeux/joyeuse (joyful)', 'Créatif/ive (creative)', 'Dynamique (dynamic, lively)', 'Dansant(e) (danceable)', 'Répétitif/ive (repetitive)', 'À la mode /branché(e) (current/trendy)', 'Agréable/désagréable (enjoyable/unpleasant)', 'Fort(e)/faible (strong/weak)', 'Unique/original(e) (original/common)', 'Une histoire intéressante (an interesting story)', 'Pas mon truc (not my thing/style)', 'Un tube (a hit)'],
+      ['Me fait danser (makes me want to dance)', 'Me fait mal aux oreilles (hurts my ears)', 'Me donne envie de vomir (makes me want to vomit)', 'Me plaît beaucoup (is pleasing to me)', 'Me met de bonne/mauvaise humeur (puts me in a good/bad mood)', 'Me touche beaucoup (touches my heart a lot)']
+    ];
+
+    function createSmallContainer(containerNumber, textArray, label) {
+      const smallContainer = document.createElement('div');
+      smallContainer.classList.add('small-container');
+      smallContainer.id = `small-container${containerNumber}`;
+
+      const containerLabel = document.createElement('div');
+      containerLabel.classList.add('label');
+      containerLabel.textContent = label;
+      smallContainer.appendChild(containerLabel);
+
+      const gridContainer = document.createElement('div');
+      gridContainer.classList.add('grid-container');
+
+      for (let i = 0; i < textArray.length; i++) {
+        const block = document.createElement('div');
+        block.classList.add('block');
+        block.id = `block${containerNumber * 10 + i}`;
+        block.textContent = textArray[i];
+
+        const textLength = textArray[i].length;
+        const maxLength = 40;
+        let blockHeight = '40px';
+        let blockWidth = '90%';
+
+        if (textLength > maxLength) {
+          block.style.fontSize = '8px';
+          blockHeight = '60px';
+        } else if (textLength > 30) {
+          block.style.fontSize = '9px';
+          blockHeight = '50px';
+        }
+
+        block.style.height = blockHeight;
+        block.style.width = blockWidth;
+
+        block.addEventListener('mousedown', onBlockClick);
+        gridContainer.appendChild(block);
+      }
+
+      smallContainer.appendChild(gridContainer);
+      document.querySelector('#container').appendChild(smallContainer);
+    }
+
+    for (let i = 0; i < blockText.length; i++) {
+      createSmallContainer(i + 1, blockText[i], containerLabels[i]);
+    }
+
+    function onBlockClick(event) {
+      event.preventDefault();
+      if (isDragging) return;
+
+      isDragging = true;
+      currentBlock = event.target;
+
+      const rect = currentBlock.getBoundingClientRect();
+
+      // Fix width & height before removing from layout
+      currentBlock.style.width = rect.width + 'px';
+      currentBlock.style.height = rect.height + 'px';
+
+      currentBlock.style.position = 'fixed';
+      currentBlock.style.left = rect.left + 'px';
+      currentBlock.style.top = rect.top + 'px';
+      currentBlock.style.zIndex = '1000';
+      currentBlock.style.pointerEvents = 'none';
+
+      document.body.appendChild(currentBlock);
+
+      function moveAt(x, y) {
+        currentBlock.style.left = x + 'px';
+        currentBlock.style.top = y + 'px';
+      }
+
+      function onMouseMove(e) {
+        moveAt(e.clientX, e.clientY);
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+
+      document.addEventListener('mouseup', function onMouseUp() {
+        isDragging = false;
+        currentBlock.style.pointerEvents = 'auto';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }, { once: true });
+    }
+  </script>
+</body>
+</html>
+
